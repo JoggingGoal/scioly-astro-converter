@@ -1,0 +1,225 @@
+﻿<script>
+
+
+// ====================== CONSTANTS ======================
+const C = 2.998e8;
+const G = 6.674e-11;
+const H = 6.626e-34;
+const SIGMA = 5.670e-8;
+const Lsun = 3.828e26;
+const Msun = 1.989e30;
+
+
+// ====================== FORMULA DATABASE ======================
+
+
+let formulas = {
+
+
+"Stefan–Boltzmann Law": {
+    formula: "L = 4πR²σT⁴",
+    variables: ["L","R","T"],
+    solve: (v)=>{
+        if(v.solveFor==="L") return 4*Math.PI*v.R**2*SIGMA*v.T**4;
+        if(v.solveFor==="R") return Math.sqrt(v.L/(4*Math.PI*SIGMA*v.T**4));
+        if(v.solveFor==="T") return (v.L/(4*Math.PI*v.R**2*SIGMA))**0.25;
+    }
+},
+
+
+"Distance Modulus": {
+    formula: "m - M = 5 log10(d) - 5",
+    variables: ["m","M","d"],
+    solve: (v)=>{
+        if(v.solveFor==="d") return 10**((v.m - v.M + 5)/5);
+    }
+},
+
+
+"Parallax Distance": {
+    formula: "d = 1/p (p in arcsec)",
+    variables: ["d","p"],
+    solve: (v)=>{
+        if(v.solveFor==="d") return 1/v.p;
+        if(v.solveFor==="p") return 1/v.d;
+    }
+},
+
+
+"Hubble Law": {
+    formula: "v = H₀ d",
+    variables: ["v","d","H0"],
+    solve: (v)=>{
+        if(v.solveFor==="v") return v.H0 * v.d;
+        if(v.solveFor==="d") return v.v / v.H0;
+    }
+},
+
+
+"Doppler Shift": {
+    formula: "Δλ/λ = v/c",
+    variables: ["v","lambda","delta"],
+    solve: (v)=>{
+        if(v.solveFor==="v") return (v.delta/v.lambda)*C;
+    }
+},
+
+
+"Wien's Law": {
+    formula: "λmax = b/T",
+    variables: ["lambda","T"],
+    solve: (v)=>{
+        const b=2.898e-3;
+        if(v.solveFor==="lambda") return b/v.T;
+        if(v.solveFor==="T") return b/v.lambda;
+    }
+},
+
+
+"Photon Energy": {
+    formula: "E = hf",
+    variables: ["E","f"],
+    solve: (v)=>{
+        if(v.solveFor==="E") return H*v.f;
+        if(v.solveFor==="f") return v.E/H;
+    }
+},
+
+
+"Mass-Luminosity Relation": {
+    formula: "L ∝ M^3.5",
+    variables: ["L","M"],
+    solve: (v)=>{
+        if(v.solveFor==="L") return Lsun*(v.M**3.5);
+    }
+},
+
+
+"Escape Velocity": {
+    formula: "v = sqrt(2GM/R)",
+    variables: ["v","M","R"],
+    solve: (v)=>{
+        if(v.solveFor==="v") return Math.sqrt(2*G*v.M/v.R);
+    }
+},
+
+
+// ====================== BINARY STAR SECTION ======================
+
+
+"Binary Kepler's 3rd Law": {
+    formula: "P² = 4π²a³ / G(M1+M2)",
+    variables: ["P","a","M1","M2"],
+    solve: (v)=>{
+        if(v.solveFor==="P") 
+            return Math.sqrt((4*Math.PI**2*v.a**3)/(G*(v.M1+v.M2)));
+    }
+},
+
+
+"Binary Mass Function": {
+    formula: "f(m) = (M2³ sin³i)/(M1+M2)²",
+    variables: ["M1","M2","i"],
+    solve: (v)=>{
+        return (v.M2**3*Math.sin(v.i)**3)/(v.M1+v.M2)**2;
+    }
+},
+
+
+"Center of Mass": {
+    formula: "M1 r1 = M2 r2",
+    variables: ["M1","M2","r1"],
+    solve: (v)=>{
+        if(v.solveFor==="r1") return (v.M2*v.r2)/v.M1;
+    }
+},
+
+
+"Orbital Velocity (Binary)": {
+    formula: "v = sqrt(G(M1+M2)/a)",
+    variables: ["v","M1","M2","a"],
+    solve: (v)=>{
+        if(v.solveFor==="v")
+            return Math.sqrt(G*(v.M1+v.M2)/v.a);
+    }
+},
+
+
+"Roche Limit": {
+    formula: "d = 2.44 R (ρ1/ρ2)^(1/3)",
+    variables: ["R","rho1","rho2"],
+    solve: (v)=>{
+        return 2.44*v.R*(v.rho1/v.rho2)**(1/3);
+    }
+},
+
+
+"Reduced Mass": {
+    formula: "μ = (M1 M2)/(M1+M2)",
+    variables: ["M1","M2"],
+    solve: (v)=>{
+        return (v.M1*v.M2)/(v.M1+v.M2);
+    }
+}
+
+
+};
+
+
+// ====================== UI ENGINE ======================
+
+
+const formulaSelect = document.getElementById("formulaSelect");
+
+
+function loadFormulaList(){
+    formulaSelect.innerHTML="";
+    for(let f in formulas){
+        formulaSelect.innerHTML+=`<option>${f}</option>`;
+    }
+}
+loadFormulaList();
+
+
+function loadFormula(){
+    const selected=formulaSelect.value;
+    const f=formulas[selected];
+    document.getElementById("formulaDisplay").innerText=f.formula;
+
+
+    let html="";
+    f.variables.forEach(v=>{
+        html+=`<input type="number" id="var_${v}" placeholder="${v}">`;
+    });
+
+
+    html+=`<select id="solveFor">`;
+    f.variables.forEach(v=>{
+        html+=`<option value="${v}">${v}</option>`;
+    });
+    html+=`</select>`;
+
+
+    document.getElementById("formulaInputs").innerHTML=html;
+}
+loadFormula();
+
+
+function solveFormula(){
+    const selected=formulaSelect.value;
+    const f=formulas[selected];
+
+
+    let values={};
+    f.variables.forEach(v=>{
+        values[v]=parseFloat(document.getElementById("var_"+v)?.value);
+    });
+    values.solveFor=document.getElementById("solveFor").value;
+
+
+    const result=f.solve(values);
+    document.getElementById("formulaResult").innerText="Answer: "+result;
+}
+
+
+</script>
